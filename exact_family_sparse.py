@@ -32,8 +32,12 @@ Options:
   --release-diag BUS ...      drop b_ii >= 0 at these buses
   --no-rowsum, --no-diag      drop all row-sum or all diagonal constraints
   --exclude-pair I J          the pair I-J is known to carry no branch
-  --certificate I J           smallest and largest series conductance plus
-                              susceptance of the pair I-J over the passive members
+  --certificate I J           smallest and largest of w_IJ = -g_IJ - b_IJ over the
+                              passive members, with w_IJ = -g_IJ + b_IJ on a declared
+                              capacitive pair (Proposition 1, Section VI-E)
+
+A pair outside R x R is fixed by the data.  There an excluded pair must have
+y_IJ = 0, and a declared pair must have b_IJ >= 0; otherwise the script stops.
   --dimension STALL           lower bound on the dimension of K_phys from random
                               vertices, stopping after STALL vertices without a
                               rank increase; also counts the branches that vary
@@ -362,6 +366,8 @@ class SparseFamily:
             return int(np.where((iu[0] == lo) & (iu[1] == hi))[0][0])
 
         # sign = -1 on declared capacitive pairs: b_ij >= 0 there, and |b_ij| in the objective.
+        # Declared and excluded pairs outside R x R are fixed by the data and add no
+        # constraint; main() checks that the data agree with them.
         self.sign = np.ones(npair)
         for a, b in declared:
             k = pair_index(a, b)
@@ -484,6 +490,17 @@ def main():
     fam = SparseFamily(Ybase, s, u, declared=declared, rowsum=not args.no_rowsum, diag=not args.no_diag,
                        release_rowsum=release_rowsum, release_diag=release_diag,
                        exclude=index(args.exclude_pair), H=H_data, slack=slack)
+    # A pair outside R x R is fixed by the data, so an exclusion or a declaration there
+    # adds no constraint.  It must then agree with the fixed entry, within the slack.
+    tol = slack + 1e-12 * np.abs(fam.Y).max()
+    for (a, b), (i, j) in zip(args.exclude_pair, index(args.exclude_pair)):
+        y = fam.Y[i, j]
+        if fam.pair_index(i, j) is None and max(abs(y.real), abs(y.imag)) > tol:
+            raise SystemExit(f"--exclude-pair {a} {b}: the data fix y = {y:.6g}, which is not zero")
+    for (a, b), (i, j) in zip(args.declare_capacitive, declared):
+        b_fixed = -fam.Y[i, j].imag
+        if fam.pair_index(i, j) is None and b_fixed < -tol:
+            raise SystemExit(f"--declare-capacitive {a} {b}: the data fix b = {b_fixed:.6g}, which is negative")
     print(f"N={N} U={len(u)} |R|={len(fam.R)} coordinates={fam.nv} constraints={fam.A.shape[0]}")
     out = {"data_file": str(args.data_file), "N": N, "U": len(u), "unsourced_buses": bus[u].tolist(),
            "R_size": int(len(fam.R)), "coordinates_of_K": fam.nv, "options": vars(args) | {"output": str(args.output),
@@ -500,12 +517,16 @@ def main():
             if k is None:
                 out["certificates"].append({"pair": [a, b], "status": "fixed by the data"})
                 continue
-            cw = -np.asarray((fam.D[k] + fam.D[fam.npair + k]).todense()).ravel()   # change of -(g_ij + b_ij)
-            w0 = float(-(Y[i, j].real - Y[i, j].imag))
+            # w = -g_ij - b_ij, or -g_ij + b_ij on a declared capacitive pair (sign = -1).
+            # With g = Re{y} and b = -Im{y}, w = -Re{y} + sign Im{y}.
+            sign = fam.sign[k]
+            w = lambda y: float(-y.real + sign * y.imag)
+            cw = -np.asarray((fam.D[k] + sign * fam.D[fam.npair + k]).todense()).ravel()   # change of w
+            w0 = w(fam.Y[i, j])      # value at the origin of the coordinates
             lo, hi = solve(cw, fam.A, fam.b), solve(-cw, fam.A, fam.b)
-            bound = lambda r, sign: float(w0 + sign * r.fun) if r.status == 0 else (
+            bound = lambda r, s: float(w0 + s * r.fun) if r.status == 0 else (
                 "unbounded" if r.status == 3 else f"status {r.status}")
-            rec = {"pair": [a, b], "true_value": w0, "min": bound(lo, 1), "max": bound(hi, -1)}
+            rec = {"pair": [a, b], "true_value": w(Y[i, j]), "min": bound(lo, 1), "max": bound(hi, -1)}
             print("certificate:", rec)
             out["certificates"].append(rec)
 
