@@ -6,7 +6,7 @@ This file is part of the code that accompanies the paper
     A. Ashrafi, "Identifiability of Grid Admittance Matrices with Zero-Injection
     Buses: Invisible Networks and Conditions for Exact Recovery."
 
-    https://github.com/profashsquared/Identifiability-of-Grid-Admittance-Matrices
+    https://github.com/profashsquared/id_grid_mtx
 
 What it computes
 ----------------
