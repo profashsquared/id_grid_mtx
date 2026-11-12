@@ -81,3 +81,7 @@ Square roots are bounded with integer square roots. Every bound that is printed,
 **Scope.** The script verifies only the four benchmark systems. It is not a general certificate tool.
 - If the multiplier search fails, the script certifies nothing. That outcome says nothing about whether recovery fails.
 - The 300-bus relaxation has no recovery certificate.
+
+## License
+
+The code is released under the MIT License. See [LICENSE](LICENSE).
