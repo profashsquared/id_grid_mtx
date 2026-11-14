@@ -8,6 +8,9 @@ This file is part of the code that accompanies the paper
 
     https://github.com/profashsquared/id_grid_mtx
 
+Copyright (c) 2026 Ashkan Ashrafi.  Released under the MIT License.  See the
+file LICENSE in the root of the repository.
+
 What it computes
 ----------------
 With exact data, the symmetric admittance matrices that reproduce the measured
@@ -20,16 +23,17 @@ unsourced buses.  The coordinates are measured from K_star, so the origin is the
 true network.  The matrix H of the paper is formed from Y_star.
 
 The passive members are those with inductive series branches, nonnegative shunt
-conductances and b_ii >= 0, the sign constraints of Section II.  They form the
-polyhedron K_phys.  The script reports, for one test system (Section VII-B):
+conductances and b_ii >= 0, the sign constraints of Section II.  They form a
+polyhedron.  The paper writes it as calligraphic K, eq. (14), and this script
+calls it the passive set.  The script reports, for one test system (Section VII-B):
 
-  * the size of the family and the dimension of K_phys (Table I);
+  * the size of the family and the dimension of the passive set (Table I);
   * the certificate of every candidate branch, that is, the smallest and largest
-    value of its series conductance plus susceptance over K_phys, and the number
+    value of its series conductance plus susceptance over the passive set, and the number
     of ambiguous branches, whose presence the data and passivity do not decide
     (Table I);
-  * the maximum of the series degree J = J_b + J_g over K_phys, the program
-    (17) of the paper, with its error (Section VII-B) and its face width, the
+  * the maximum of the series degree J = J_b + J_g over the passive set, the program
+    (18) of the paper, with its error (Section VII-B) and its face width, the
     uniqueness check of Section IV.
 
 Every program is a linear program, solved with HiGHS through SciPy at
@@ -171,18 +175,18 @@ def face_width(fam, c, x_opt):
     return float(width)
 
 
-def dimension_of_K_phys(fam):
-    """Exact affine dimension of K_phys.
+def dimension_of_passive_set(fam):
+    """Exact affine dimension of the passive set.
 
-    K_phys is first checked for boundedness, coordinate by coordinate.  A sign
+    The passive set is first checked for boundedness, coordinate by coordinate.  A sign
     constraint a x <= b is an implicit equality when it holds with equality at
-    every member of K_phys, that is, when the minimum of a x over K_phys is b.
+    every member of the passive set, that is, when the minimum of a x over it is b.
     Only constraints that are tight at the true network (b = 0) can be implicit
-    equalities.  The dimension of K_phys is the number of coordinates minus the
+    equalities.  The dimension of the passive set is the number of coordinates minus the
     rank of the implicit equalities.
 
     The extreme points along the coordinates alone are not enough: for the
-    118-bus system they span one direction, while K_phys has dimension 2.
+    118-bus system they span one direction, while the passive set has dimension 2.
     """
     for k in range(fam.nv):
         for sign in (1.0, -1.0):
@@ -196,7 +200,7 @@ def dimension_of_K_phys(fam):
     for i in np.sort(first):                  # each distinct constraint once
         if b[i] > 1e-9:
             continue                          # strict at the true network
-        r = solve(A[i], A, b)                 # minimum of a_i x over K_phys
+        r = solve(A[i], A, b)                 # minimum of a_i x over the passive set
         if r.status == 0 and r.fun >= b[i] - 1e-9:
             implicit.append(i)
     rank = 0
@@ -208,7 +212,7 @@ def dimension_of_K_phys(fam):
 
 
 def certificates(fam, Y_true, bus):
-    """Range of w_ij = -(g_ij + b_ij) over K_phys for every candidate branch (i, j)."""
+    """Range of w_ij = -(g_ij + b_ij) over the passive set for every candidate branch (i, j)."""
     iu = fam.iu
     w0 = -(fam.G0[iu] + fam.B0[iu])
     dw = -(fam.dG[iu] + fam.dB[iu])
@@ -273,8 +277,8 @@ def main():
         print(f"max J: {entry['status']}")
     results["maximum"] = entry
 
-    results["K_phys"] = dimension_of_K_phys(fam)
-    print("K_phys:", results["K_phys"])
+    results["passive_set"] = dimension_of_passive_set(fam)
+    print("passive set:", results["passive_set"])
 
     results["certificates"] = certificates(fam, Y_true, bus)
     print("certificates:", {k: v for k, v in results["certificates"].items() if k != "ambiguous_branches"})

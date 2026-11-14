@@ -32,7 +32,7 @@ The data were generated as follows.
 | Script | What it computes | In the paper |
 |---|---|---|
 | `grid_data.py` | Reader for the data files | — |
-| `exact_family.py` | Exact family of one system, the dimension of K_phys and the branch certificates | Table I, Sections VII-B and VII-C |
+| `exact_family.py` | Exact family of one system, the dimension of its passive set (calligraphic K in the paper) and the branch certificates | Table I, Sections VII-B and VII-C |
 | `exact_family_sparse.py` | Maximum of the series degree, from the exact family or from the measurements; the 300-bus runs | Table I, Sections VII-B and VII-D |
 | `graph_conditions.py` | Graph conditions of Theorem 3, and uniqueness of the maximum in the idealized case | Table I, Section VII-B |
 | `recovery_certificate_validated.py` | Exact verification of the recovery margins of Proposition 4 | Table I, Section VII-B |
@@ -65,7 +65,7 @@ Proposition 4 gives the certificate: weights, all at least μ > 0, on the sign c
 
 1. **Weights.** A floating-point linear program finds the weights. They are only candidates, and no later step assumes they are accurate.
 2. **Exact input.** Each stored float64 entry is a dyadic rational, so it is taken as exact.
-   - Rounding leaves some conductance row sums as low as −7·10⁻¹⁵.
+   - Rounding leaves some conductance row sums slightly negative.
    - Each diagonal conductance is therefore set to g_ii = −Σ_{j≠i} g_ij. This changes it by less than 10⁻¹⁶|y_ii|.
    - The resulting network satisfies the sign constraints exactly, and the certificates refer to it (Section VII-A).
    - H, the constraint rows and the objective are computed in exact rational arithmetic.

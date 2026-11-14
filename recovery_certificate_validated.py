@@ -8,6 +8,9 @@ This file is part of the code that accompanies the paper
 
     https://github.com/profashsquared/id_grid_mtx
 
+Copyright (c) 2026 Ashkan Ashrafi.  Released under the MIT License.  See the
+file LICENSE in the root of the repository.
+
 What it proves
 --------------
 Proposition 4 of the paper certifies that maximizing the series degree J over
@@ -30,7 +33,7 @@ How
    The weights are candidates only.  Nothing below assumes they are accurate.
 2. Exact input.  Each float64 entry of the stored Y_star is a dyadic rational
    and is taken as exact.  The systems have no shunt conductance, but rounding
-   leaves conductance row sums as low as -7e-15.  Each diagonal conductance is
+   leaves some conductance row sums slightly negative.  Each diagonal conductance is
    therefore set to g_ii = -sum_{j != i} g_ij, a change below 1e-16 |y_ii|
    (Section VII-A of the paper).  This network satisfies the sign constraints of
    Section II exactly, and the certificates refer to it.  H = -K^{-1} Y_us is then

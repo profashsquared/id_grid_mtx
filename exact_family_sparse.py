@@ -8,6 +8,9 @@ This file is part of the code that accompanies the paper
 
     https://github.com/profashsquared/id_grid_mtx
 
+Copyright (c) 2026 Ashkan Ashrafi.  Released under the MIT License.  See the
+file LICENSE in the root of the repository.
+
 What it computes
 ----------------
 The model is the one of exact_family.py: the family Y(K) of networks that
@@ -20,7 +23,7 @@ and Table I of the paper) and for the runs with the row-sum and diagonal
 constraints removed (Section VII-B).
 
 The script maximizes the series degree J = J_b + J_g over the passive members,
-the program (17) of the paper, and reports the error, the false and
+the program (18) of the paper, and reports the error, the false and
 missed branches, and the face width of the optimum in four random directions.
 Options:
 
@@ -38,7 +41,7 @@ Options:
 
 A pair outside R x R is fixed by the data.  There an excluded pair must have
 y_IJ = 0, and a declared pair must have b_IJ >= 0; otherwise the script stops.
-  --dimension STALL           lower bound on the dimension of K_phys from random
+  --dimension STALL           lower bound on the dimension of the passive set from random
                               vertices, stopping after STALL vertices without a
                               rank increase; also counts the branches that vary
   --workers P                 solve the random-vertex programs in P parallel
@@ -48,7 +51,7 @@ y_IJ = 0, and a declared pair must have b_IJ >= 0; otherwise the script stops.
                               their error scale to zero, relax every sign constraint
                               by a slack set from the measured unsourced currents, and
                               count a branch above 100 times the slack
-  --exact-dimension           exact dimension of K_phys from its implicit
+  --exact-dimension           exact dimension of the passive set from its implicit
                               equalities, found with a few relative-interior programs
   --solver gurobi             use Gurobi (as for the 300-bus system) instead of HiGHS
 
@@ -73,7 +76,7 @@ Section VII-D and Table I, 300-bus system (Gurobi):
     python exact_family_sparse.py data/case300.mat --solver gurobi --release-rowsum-at-taps \\
         --release-diag 1201 --exclude-pair 128 168 --output e.json      (capacitor not declared)
 
-The --dimension run gives a lower bound on the dimension of K_phys from random
+The --dimension run gives a lower bound on the dimension of the passive set from random
 vertices.  With --dimension 10, the run stops after 282 vertices with a bound of
 214, and 474 branches vary; with --workers 5 it gives the same numbers about
 three times faster.  The --exact-dimension run gives the exact dimension, 268,
@@ -241,7 +244,7 @@ def exact_dimension(A, b, tol=1e-7, verbose=False):
 
     Every constraint with b_i > 0 is strict at x = 0, so near x = 0 the polyhedron
     coincides with the cone {x : A_0 x <= 0} of the constraints with b_i = 0, which is
-    the cone of Theorem 3.  A convex set that contains x = 0 has the same affine hull
+    the cone of Proposition 3.  A convex set that contains x = 0 has the same affine hull
     as its intersection with any neighborhood of x = 0, so P and this cone have the
     same dimension.  Only the rows with b_i = 0 are used, and x is boxed to [-1, 1],
     which leaves the affine hull unchanged and keeps the programs bounded.
@@ -563,7 +566,7 @@ def main():
         print(f"max J: {res.message}")
     out["maximum"] = entry
 
-    # Lower bound on the dimension of K_phys from random vertices.
+    # Lower bound on the dimension of the passive set from random vertices.
     if args.dimension:
         rng = np.random.default_rng(1)
         X, rank, stall, n_lp = [], 0, 0, 0
@@ -592,14 +595,14 @@ def main():
         if len(X) > 1 and rank != float("inf"):
             spread = np.array([np.abs(fam.D[:2 * fam.npair] @ (x - X[0])).ravel() for x in X[1:]]).max(axis=0)
             varying = int(((spread[:fam.npair] > 1e-7) | (spread[fam.npair:] > 1e-7)).sum())
-        out["K_phys"] = {"dimension_lower_bound": rank, "vertices": len(X), "linear_programs": n_lp,
+        out["passive_set"] = {"dimension_lower_bound": rank, "vertices": len(X), "linear_programs": n_lp,
                          "branches_that_vary": varying, "candidate_pairs_in_R": fam.npair,
                          "candidate_pairs": N * (N - 1) // 2}
-        print("K_phys:", out["K_phys"])
+        print("passive set:", out["passive_set"])
 
     if args.exact_dimension:
-        out["K_phys_exact"] = exact_dimension(fam.A, fam.b)
-        print("K_phys, exact:", out["K_phys_exact"])
+        out["passive_set_exact"] = exact_dimension(fam.A, fam.b)
+        print("passive set, exact:", out["passive_set_exact"])
 
     args.output.write_text(json.dumps(out, indent=1))
     print(f"Wrote {args.output}")

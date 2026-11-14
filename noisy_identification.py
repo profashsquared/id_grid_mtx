@@ -8,6 +8,9 @@ This file is part of the code that accompanies the paper
 
     https://github.com/profashsquared/id_grid_mtx
 
+Copyright (c) 2026 Ashkan Ashrafi.  Released under the MIT License.  See the
+file LICENSE in the root of the repository.
+
 Measurement model (Section VII-E of the paper)
 ----------------------------------------------
 The voltages are exact.  Every entry of the complex power injections S receives

@@ -8,17 +8,22 @@ This file is part of the code that accompanies the paper
 
     https://github.com/profashsquared/id_grid_mtx
 
+Copyright (c) 2026 Ashkan Ashrafi.  Released under the MIT License.  See the
+file LICENSE in the root of the repository.
+
 What it computes
 ----------------
 A group is a maximal set of unsourced buses connected through branches among
-them.  Theorem 3 of the paper (Section VI-D) states three graph conditions:
+them.  A sourced neighbor of an unsourced bus p is private to p if it is
+adjacent to no other bus of the group of p.  Theorem 3 of the paper
+(Section VI-D) states four graph conditions:
 
-  1. Every unsourced bus has a private neighbor, a sourced neighbor adjacent to
-     no other bus of its group.
-  2. Every group of two or more buses contains a bus p with a private neighbor i
-     such that every other bus of the group has a private neighbor that is not
-     adjacent to i.  Every group of one bus has two nonadjacent neighbors.
-  3. No two groups share more than one sourced neighbor.
+  1.  Every unsourced bus has a private neighbor.
+  2a. Every group of two or more buses contains a bus p with a private neighbor i
+      such that every other bus of the group has a private neighbor that is not
+      adjacent to i.
+  2b. Every group of one bus has two nonadjacent neighbors.
+  3.  No two groups share more than one sourced neighbor.
 
 For each test system the script reports the number of unsourced buses, the
 group sizes (the row "Largest group" of Table I), and whether the conditions
@@ -71,7 +76,7 @@ def groups(A, u):
 
 
 def violations(A, u):
-    """List the violations of conditions 1-3; an empty list means that all hold."""
+    """List the violations of conditions 1, 2a, 2b and 3.  An empty list means that all hold."""
     U, gs, found = set(u), groups(A, u), []
     sourced_neighbors = [set(int(a) for p in g for a in np.where(A[p])[0] if a not in U) for g in gs]
     for i, j in itertools.combinations(range(len(gs)), 2):
@@ -90,10 +95,10 @@ def violations(A, u):
         if len(g) == 1:
             nb = [int(b) for b in np.where(A[g[0]])[0]]
             if not any(not A[x, y] for x, y in itertools.combinations(nb, 2)):
-                found.append(("condition 2", g))
+                found.append(("condition 2b", g))
         elif not any(all(any(not A[i, k] for k in private(q)) for q in g if q != p)
                      for p in g for i in private(p)):
-            found.append(("condition 2", g))
+            found.append(("condition 2a", g))
     return found
 
 
